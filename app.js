@@ -71,7 +71,35 @@ app.get('/expenses/:userId/today', (req, res) => {
 
 
 // Delete expense by id (with userId check) - using request body
+app.delete('/expenses/:id', (req, res) => {
+  const id = req.params.id;
+  const sql = "DELETE FROM expense WHERE id = ?";
+  con.query(sql, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error" });
+    if (result.affectedRows === 0) return res.status(404).json({ message: "Not found" });
+    res.status(200).json({ message: `Deleted expense ${id}` });
+  });
+});
 
+// Search expenses by keyword (e.g., item name)
+app.get('/expenses/:userId/search', (req, res) => {
+  const userId = req.params.userId;
+  const keyword = req.query.query;
+
+  if (!keyword) {
+    return res.status(400).send("Missing search keyword");
+  }
+
+  const sql = "SELECT * FROM expense WHERE user_id = ? AND item LIKE ?";
+  const likeQuery = '%' + keyword + '%';
+
+  con.query(sql, [userId, likeQuery], function (err, results) {
+    if (err) {
+      return res.status(500).send("Database server error");
+    }
+    res.json(results);
+  });
+});
 
 
 
@@ -80,7 +108,29 @@ app.get('/expenses/:userId/today', (req, res) => {
 
 
 // Add a new expense
+app.post("/expenses/add/:userId", (req, res) => {
+  const userIdParam = req.params.userId;
+  const { item, paid } = req.body ?? {};
 
+  if (!userIdParam || !item || paid === undefined) {
+    return res.status(400).json({ message: "Missing required fields: userId(param), item, paid" });
+  }
+
+  const amount = Number(paid);
+  if (!Number.isFinite(amount)) {
+    return res.status(400).json({ message: "paid must be a number" });
+  }
+
+  // ใช้เวลาปัจจุบันเป็นค่า date
+  const sql = "INSERT INTO expense (user_id, item, paid, `date`) VALUES (?, ?, ?, NOW())";
+  con.query(sql, [userIdParam, item, amount], (err, result) => {
+    if (err) {
+      console.error("DB ERROR:", err);
+      return res.status(500).json({ message: "Database error", detail: err.message });
+    }
+    res.status(201).json({ message: "Expense added successfully", id: result.insertId });
+  });
+});
 
 
 
