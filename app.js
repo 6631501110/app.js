@@ -108,7 +108,29 @@ app.get('/expenses/:userId/search', (req, res) => {
 
 
 // Add a new expense
+app.post("/expenses/add/:userId", (req, res) => {
+  const userIdParam = req.params.userId;
+  const { item, paid } = req.body ?? {};
 
+  if (!userIdParam || !item || paid === undefined) {
+    return res.status(400).json({ message: "Missing required fields: userId(param), item, paid" });
+  }
+
+  const amount = Number(paid);
+  if (!Number.isFinite(amount)) {
+    return res.status(400).json({ message: "paid must be a number" });
+  }
+
+  // ใช้เวลาปัจจุบันเป็นค่า date
+  const sql = "INSERT INTO expense (user_id, item, paid, `date`) VALUES (?, ?, ?, NOW())";
+  con.query(sql, [userIdParam, item, amount], (err, result) => {
+    if (err) {
+      console.error("DB ERROR:", err);
+      return res.status(500).json({ message: "Database error", detail: err.message });
+    }
+    res.status(201).json({ message: "Expense added successfully", id: result.insertId });
+  });
+});
 
 
 
