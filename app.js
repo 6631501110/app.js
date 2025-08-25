@@ -81,6 +81,25 @@ app.delete('/expenses/:id', (req, res) => {
   });
 });
 
+// Search expenses by keyword (e.g., item name)
+app.get('/expenses/:userId/search', (req, res) => {
+  const userId = req.params.userId;
+  const keyword = req.query.query;
+
+  if (!keyword) {
+    return res.status(400).send("Missing search keyword");
+  }
+
+  const sql = "SELECT * FROM expense WHERE user_id = ? AND item LIKE ?";
+  const likeQuery = '%' + keyword + '%';
+
+  con.query(sql, [userId, likeQuery], function (err, results) {
+    if (err) {
+      return res.status(500).send("Database server error");
+    }
+    res.json(results);
+  });
+});
 
 
 
