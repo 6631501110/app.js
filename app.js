@@ -71,6 +71,15 @@ app.get('/expenses/:userId/today', (req, res) => {
 
 
 // Delete expense by id (with userId check) - using request body
+app.delete('/expenses/:id', (req, res) => {
+  const id = req.params.id;
+  const sql = "DELETE FROM expense WHERE id = ?";
+  con.query(sql, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: "DB error" });
+    if (result.affectedRows === 0) return res.status(404).json({ message: "Not found" });
+    res.status(200).json({ message: `Deleted expense ${id}` });
+  });
+});
 
 
 
